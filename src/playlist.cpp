@@ -25,7 +25,11 @@ std::string fetchPlaylistFromUrl(const std::string& url) {
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L); // Bypasses SSL issues on older webOS
+        
+        // Trick Cloudflare into thinking we are a webOS Browser
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, "Mozilla/5.0 (WebOS; SmartTV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36");
+        
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0L); 
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0L);
 
         res = curl_easy_perform(curl);
