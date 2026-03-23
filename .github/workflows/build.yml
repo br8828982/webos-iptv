@@ -1,0 +1,47 @@
+name: Build webOS IPTV App
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # Allows you to manually trigger a build
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget xz-utils build-essential python3 make libcurl4-openssl-dev
+
+    - name: Download and Install Community NDK
+      run: |
+        wget https://github.com/webosbrew/meta-lg-webos-ndk/releases/download/1.0.g/webos-sdk-x86_64-armv7a-neon-toolchain-1.0.g.sh
+        chmod +x webos-sdk-x86_64-armv7a-neon-toolchain-1.0.g.sh
+        # The -y skips the prompt, -d sets the install directory
+        ./webos-sdk-x86_64-armv7a-neon-toolchain-1.0.g.sh -y -d /opt/webos-sdk
+
+    - name: Compile the C++ App
+      run: |
+        source /opt/webos-sdk/environment-setup-armv7a-neon-webos-linux-gnueabi
+        make
+
+    - name: Setup Node.js (For the LG CLI)
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install webOS CLI & Package the App
+      run: |
+        npm install -g @webos-tools/cli
+        ares-package .
+
+    - name: Upload the Finished IPK
+      uses: actions/upload-artifact@v4
+      with:
+        name: lightiptv-app
+        path: "*.ipk"
