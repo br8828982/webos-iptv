@@ -38,19 +38,40 @@ jobs:
       run: |
         npm install -g @webos-tools/cli
         
-        # 1. Create a clean staging folder and a 'lib' folder
+        # 1. Create a clean staging folder
         mkdir release_build
         mkdir release_build/lib
         
-        # 2. Copy ONLY the 3 files the TV actually needs
+        # 2. Copy the executable, icon, and appinfo
         cp lightiptv release_build/
         cp appinfo.json release_build/
         cp icon.png release_build/
         
-        # 3. THE FIX: Grab the SDL2 library from the compiler and put it in the app's backpack
-        cp -P /opt/webos-sdk/sysroots/armv7a-neon-webos-linux-gnueabi/usr/lib/libSDL2-2.0.so* release_build/lib/
+        # 3. Create the webOS Launcher Script (Sets graphics and library paths)
+        cat << 'EOF' > release_build/run.sh
+        #!/bin/sh
+        export LD_LIBRARY_PATH="$PWD/lib:$LD_LIBRARY_PATH"
+        export XDG_RUNTIME_DIR=/tmp/xdg
+        mkdir -p $XDG_RUNTIME_DIR
+        exec ./lightiptv
+        EOF
         
-        # 4. Package the clean folder
+        # Make sure the TV is allowed to execute the files
+        chmod +x release_build/run.sh
+        chmod +x release_build/lightiptv
+        
+        # 4. Modify appinfo.json to use the launcher script instead of the raw binary
+        sed -i 's/"main": "lightiptv"/"main": "run.sh"/' release_build/appinfo.json
+        
+        # 5. Pack ALL the vital libraries (using -L to copy the actual files, not broken shortcuts)
+        SYSROOT=/opt/webos-sdk/sysroots/armv7a-neon-webos-linux-gnueabi
+        cp -L $SYSROOT/usr/lib/libSDL2-2.0.so* release_build/lib/ 2>/dev/null || true
+        cp -L $SYSROOT/usr/lib/libstdc++.so* release_build/lib/ 2>/dev/null || true
+        cp -L $SYSROOT/usr/lib/libcurl.so* release_build/lib/ 2>/dev/null || true
+        cp -L $SYSROOT/usr/lib/libcrypto.so* release_build/lib/ 2>/dev/null || true
+        cp -L $SYSROOT/usr/lib/libssl.so* release_build/lib/ 2>/dev/null || true
+        
+        # 6. Package the app
         ares-package release_build
 
     - name: Upload the Finished IPK
