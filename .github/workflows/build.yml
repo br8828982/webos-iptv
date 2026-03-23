@@ -38,15 +38,19 @@ jobs:
       run: |
         npm install -g @webos-tools/cli
         
-        # 1. Create a clean staging folder
+        # 1. Create a clean staging folder and a 'lib' folder
         mkdir release_build
+        mkdir release_build/lib
         
         # 2. Copy ONLY the 3 files the TV actually needs
         cp lightiptv release_build/
         cp appinfo.json release_build/
         cp icon.png release_build/
         
-        # 3. Package the clean folder, NOT the whole workspace
+        # 3. THE FIX: Grab the SDL2 library from the compiler and put it in the app's backpack
+        cp -P /opt/webos-sdk/sysroots/armv7a-neon-webos-linux-gnueabi/usr/lib/libSDL2-2.0.so* release_build/lib/
+        
+        # 4. Package the clean folder
         ares-package release_build
 
     - name: Upload the Finished IPK
