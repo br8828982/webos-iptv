@@ -61,16 +61,18 @@ int main(int argc, char* argv[]) {
 
     SDL_Window* window = SDL_CreateWindow("IPTV", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 1920, 1080, SDL_WINDOW_FULLSCREEN);
     
-    std::cout << "Fetching dynamic playlist..." << std::endl;
     std::string m3uData = fetchPlaylistFromUrl("https://kodi-1fx.pages.dev/kodi_playlist.m3u");
     channels = parseKodiPlaylistFromString(m3uData);
 
+    // If Cloudflare blocks us or internet is down, play the test video!
     if(channels.empty()) {
-        std::cout << "Failed to load playlist. Exiting." << std::endl;
-        isRunning = false;
-    } else {
-        playCurrentChannel();
+        Channel dummy;
+        dummy.name = "Fallback Test Video";
+        dummy.url = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8";
+        channels.push_back(dummy);
     }
+
+    playCurrentChannel();
 
     SDL_Event event;
     while (isRunning) {
@@ -85,7 +87,8 @@ int main(int argc, char* argv[]) {
         gst_element_set_state(pipeline, GST_STATE_NULL);
         gst_object_unref(pipeline);
     }
-    SDL_DestroyWindow(window);
+    
+    if (window) SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;
 }
