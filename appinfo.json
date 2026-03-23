@@ -1,0 +1,10 @@
+{
+    "id": "com.noor.lightiptv",
+    "version": "1.0.0",
+    "vendor": "Noor",
+    "type": "native",
+    "main": "lightiptv",
+    "title": "Lightweight IPTV",
+    "icon": "icon.png",
+    "requiredMemory": 128
+}
